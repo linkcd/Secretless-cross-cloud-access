@@ -13,25 +13,22 @@ using Azure.Storage.Blobs.Models;
 
 
 public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
-{
-    string azureBlobUri = "https://crosscloudazurestorage.blob.core.windows.net/mycontainer";
-    
-    // Decide to use which credential, SAMI or UAMI
-    string ManagedIdentityType = req.Query["ManagedIdentityType"];
-
+{ 
+    // Extract inputs
     string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
     dynamic data = JsonConvert.DeserializeObject(requestBody);
-    ManagedIdentityType = ManagedIdentityType ?? data?.ManagedIdentityType; 
+    string managedIdentityType = data?.ManagedIdentityType; 
+    string azureBlobUri = data?.AzureBlobUri;
 
+    // Decide to use which credential, SAMI or UAMI
     TokenCredential azureCredential = null;
-    switch(ManagedIdentityType) 
+    switch(managedIdentityType) 
     {
         case "SAMI":
             azureCredential = new ManagedIdentityCredential();
             break;
         case "UAMI":
-            string UAMIClientId = req.Query["UAMIClientId"];
-            UAMIClientId = UAMIClientId ?? data?.UAMIClientId;
+            string UAMIClientId = data?.UAMIClientId;
             azureCredential = new ManagedIdentityCredential(UAMIClientId);
             break;
         default:
