@@ -5,5 +5,7 @@
     <ItemGroup>  
 		<PackageReference Include="Azure.Storage.Blobs" Version="12.14.1" />
         <PackageReference Include="Azure.Identity" Version="1.7.0" />
+        <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.100.7" />
+        <PackageReference Include="AWSSDK.S3" Version="3.7.101.8" />
     </ItemGroup>  
 </Project>  

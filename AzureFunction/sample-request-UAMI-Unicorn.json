@@ -1,0 +1,7 @@
+{
+    "AzureBlobUri": "https://crosscloudazureunicorn.blob.core.windows.net/unicorn", 
+    "S3BucketName": "mycrosscloudaccessdemos3",
+    "ManagedIdentityType": "UAMI",
+    "UAMIClientId": "f0f35a08-bf4a-434b-af23-4f906d6d9317",
+    "AWSRoleArn": "arn:aws:iam::200046397282:role/Azure-UAMI1-S3-Readonly-Role2"
+}

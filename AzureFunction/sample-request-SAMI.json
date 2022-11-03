@@ -1,4 +1,5 @@
 {
     "AzureBlobUri": "https://crosscloudazurestorage.blob.core.windows.net/mycontainer", 
+    "S3BucketName": "mycrosscloudaccessdemos3",
     "ManagedIdentityType": "SAMI"
 }
