@@ -10,6 +10,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.IdentityModel.Tokens.Jwt;
 
 using Azure;
 using Azure.Core;
@@ -85,8 +86,26 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     // Load blob items from AWS S3
 
     // load oauth token (Jwt)
+    string appIdForAssumingAWSRole = null;
+    if(managedIdentityType == "SAMI")
+    {
+        //for SAMI, get the current client id first
+        var accessTokenForGraph = azureCredential.GetToken(new TokenRequestContext(new[] { "https://graph.microsoft.com/.default" }));
+
+        var handler = new JwtSecurityTokenHandler();
+        JwtSecurityToken jsonToken = handler.ReadJwtToken(accessTokenForGraph.Token);
+        appIdForAssumingAWSRole = jsonToken.Claims.First(c => c.Type == "appid").Value;
+        
+    }
+    else
+    {
+        appIdForAssumingAWSRole = UAMIClientId;
+    }
+    log.LogInformation("appIdForAssumingAWSRole: " + appIdForAssumingAWSRole);
+
+
     log.LogInformation("Assuming AWS role...");
-    var accessToken = azureCredential.GetToken(new TokenRequestContext(new[] { UAMIClientId }));
+    var accessToken = azureCredential.GetToken(new TokenRequestContext(new[] { appIdForAssumingAWSRole }));
     String OAuthToken = accessToken.Token.ToString();
     // log.LogInformation(OAuthToken);
 
