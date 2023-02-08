@@ -1,4 +1,4 @@
-# CrossCloudAccess
+# Secretless Cross Cloud Access
 Secretless access Azure and AWS resources (API) with Azure managed identity 
 
 Next step: How to allow above 3 identities to assume IAM role?
