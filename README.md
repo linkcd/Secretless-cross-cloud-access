@@ -11,7 +11,7 @@ The Azure function is utilizing manage identity for access azure storage account
 This project demonstrates how to use one Azure managed identity (either User-Assigned managed identity (UAMI) or System-Assigned Managed Identity (SAMI)), to read the objects from both Azure storage account and AWS S3 bucket. The same managed identity works in both cloud, without managing any secrets. 
 
 ## Architecture 
-![Architecture](./doc/Secretless-cross-cloud-access-diagram.png?raw=true "Architecture")
+![Architecture](./Doc/Secretless-cross-cloud-access-diagram.png?raw=true "Architecture")
 
 ## Steps:
 
