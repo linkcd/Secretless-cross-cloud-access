@@ -5,13 +5,16 @@ As a security best practice of developing cloud native applications, developers 
 
 AWS IAM and Azure Managed Identity works great in their own platform, but there are cross cloud cases: A workload in one cloud need to access resources in another cloud. For example, an Azure workload such as Azure Function or App Service that store data to Azure storage account but also save the data to an AWS S3 bucket as across cloud backup solution.
 
-The Azure function is utilizing manage identity for access azure storage account. For access s3, the developer could create an IAM user and store the IAM user credentials, but there is a better way to implement a secretless access both Azure and AWS resource, with the very same azure managed identity.
+The Azure function is utilizing manage identity for access azure storage account. For accessing s3, the developer could create an IAM user and store the IAM user credentials, but there is a better way to implement a secretless access both Azure and AWS resource, with the very same azure managed identity.
 
 ## This Project
-This project demonstrates how to use one Azure managed identity (either User-Assigned managed identity (UAMI) or System-Assigned Managed Identity (SAMI)), to read the objects from both Azure storage account and AWS S3 bucket. The same managed identity works in both cloud, without managing any secrets. 
+This project demonstrates a secretless approach to use one Azure managed identity (either User-Assigned managed identity (UAMI) or System-Assigned Managed Identity (SAMI)), for reading the objects from both Azure storage account and AWS S3 bucket. The same managed identity works in both cloud, without managing any secrets. 
 
 ## Architecture 
 ![Architecture](./Doc/Secretless-cross-cloud-access-diagram.png?raw=true "Architecture")
+
+## Screenshot
+![Screenshot](./Doc/screenshot-azurefunction-access-azure-and-aws.png?raw=true "Screenshot")
 
 ## Steps:
 
