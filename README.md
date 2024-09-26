@@ -1,6 +1,6 @@
 # Secretless access Azure and AWS resources with Azure managed identity and AWS IAM
 
-This is the source code repo of my blog [How to secretless access Azure and AWS resources with Azure managed identity and AWS IAM](https://feng.lu/2024/09/18/How-to-secretless-access-Azure-and-AWS-resources-with-Azure-managed-identity-and-AWS-IAM/)
+This is the source code repo of my blog [Implementing Secret-less Access to Azure and AWS with Azure Managed Identities and AWS IAM](https://feng.lu/2024/09/18/How-to-secretless-access-Azure-and-AWS-resources-with-Azure-managed-identity-and-AWS-IAM/)
 
 ## User case
 Nowadays, it is common for companies to operate in multi-cloud environments, such as Azure and AWS. They often use Microsoft Entra ID (formerly Azure Active Directory) as their centralized identity provider (IdP), managing identities for both **human users** and **applications**. They would like to use the Entra ID identities to access resources in AWS.

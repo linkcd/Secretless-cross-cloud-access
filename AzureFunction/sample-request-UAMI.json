@@ -1,6 +1,6 @@
 {
-    "AzureBlobUri": "https://crosscloudazurestorage.blob.core.windows.net/mycontainer", 
-    "S3BucketName": "mycrosscloudaccessdemos3",
+    "AzureBlobUri": "https://[storage_account_name].blob.core.windows.net/mycontainer", 
+    "S3BucketName": "[S3_bucket_name]",
     "ManagedIdentityType": "UAMI",
     "UAMIClientId": "[UAMI_client_id]",
     "AWSRoleArn": "arn:aws:iam::[YOUR_AWS_ACCOUNT_NUMBER]:role/S3AccessRoleFromAzure",
