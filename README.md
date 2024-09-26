@@ -1,63 +1,41 @@
-# Secretless access Azure and AWS resources with Azure managed identity
+# Secretless access Azure and AWS resources with Azure managed identity and AWS IAM
 
-## User Case
-As a security best practice of developing cloud native applications, developers utilize the cloud-native IAM (identity and access management) mechanism to manage resource access, rather than managing credentials such as secrets and keys themselves. The cloud-native mechanism in AWS is AWS IAM and in Azure it is often Azure Managed Identity. 
+This is the source code repo of my blog [How to secretless access Azure and AWS resources with Azure managed identity and AWS IAM](https://feng.lu/2024/09/18/How-to-secretless-access-Azure-and-AWS-resources-with-Azure-managed-identity-and-AWS-IAM/)
 
-AWS IAM and Azure Managed Identity works great in their own platform, but there are cross cloud cases: A workload in one cloud need to access resources in another cloud. For example, an Azure workload such as Azure Function or App Service that store data to Azure storage account but also save the data to an AWS S3 bucket as across cloud backup solution.
+## User case
+Nowadays, it is common for companies to operate in multi-cloud environments, such as Azure and AWS. They often use Microsoft Entra ID (formerly Azure Active Directory) as their centralized identity provider (IdP), managing identities for both **human users** and **applications**. They would like to use the Entra ID identities to access resources in AWS.
 
-The Azure function is utilizing manage identity for access azure storage account. For accessing s3, the developer could create an IAM user and store the IAM user credentials, but there is a better way to implement a secretless access both Azure and AWS resource, with the very same azure managed identity.
+Establishing human user identity access across Azure and AWS is straightforward. The IT department can use [AWS IAM Identity Center](https://aws.amazon.com/iam/identity-center/) to allow users from Microsoft Entra ID to sign-in to the AWS Management Console with Single Sign-On (SSO) via their browser. This integration simplifies authentication, offering a seamless and secure user experience across both Azure and AWS environments. For more information, you can read [this document](https://docs.aws.amazon.com/singlesignon/latest/userguide/idp-microsoft-entra.html).
+
+However, the browser-based SSO approach for human users does not apply to applications.
+
+For applications, developers follow security best practices by using cloud-native IAM (Identity and Access Management) mechanisms to manage resource access. In AWS, this mechanism is [AWS IAM](https://aws.amazon.com/iam/), while in Azure, it is typically [Azure Managed Identity](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/overview). For example, by leveraging Azure Managed Identity, developers can build applications in Azure without the need to manage secrets or keys.
+
+This approach is known as **secretless access** to cloud resources. 
+
+AWS IAM and Azure Managed Identity work well within their respective platforms, but there are cross-cloud scenarios where a workload in one cloud needs to access resources in another. For instance, an Azure Function might need to save data to both an Azure Storage account and an AWS S3 bucket for cross-cloud backup. The Azure Function uses Managed Identity to access the Azure Storage account. For accessing S3, the developer could create an IAM user and store the IAM user credentials. However, there is a better way to achieve secretless access to both Azure and AWS resources using the same Azure Managed Identity.
+
+![Screenshot](./Doc/problem.png?raw=true "problem")
+
+## Solution
+In AWS, there are multiple ways to request temporary, limited-privilege credentials by using [AWS Security Token Service (AWS STS)](https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html), such as [AssumeRoleWithSAML](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithSAML.html) and [AssumeRoleWithWebIdentity](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html).
+
+The solution is to use [AssumeRoleWithWebIdentity](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html.) and [IAM Web Identity Role](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-idp_oidc.html) to extend the permissions of the same Azure Managed Identity to also access AWS resources.  
+
+![Screenshot](./Doc/architecture.png?raw=true "architecture")
 
 ## This Project
 This project demonstrates a secretless approach to use one Azure managed identity (either User-Assigned managed identity (UAMI) or System-Assigned Managed Identity (SAMI)), for reading the objects from both Azure storage account and AWS S3 bucket. The same managed identity works in both cloud, without managing any secrets. 
 
-### Screenshot
+## Screenshot
 An azure function that can load the objects(files) from both Azure Storage account and AWS S3 buckets, without managing any secrets such as AWS IAM user secrets/keys.
-![Screenshot](./Doc/screenshot-azurefunction-access-azure-and-aws.png?raw=true "Screenshot")
+![Screenshot](./Doc/screenshot.png?raw=true "Screenshot")
 
-## Architecture 
-![Architecture](./Doc/Secretless-cross-cloud-access-diagram.png?raw=true "Architecture")
-
-
-## Steps:
-
-1. Create 2 Azure Functions (.net)
-    1. *CrossCloudAccessFunction-SAMI*
-    2. *CrossCloudAccessFunction-UAMI*
-2. Create 1 UAMI: *UAMI-CrossCloudAccess-Identity*
-3. Assign a managed identity to the function
-    1. CrossCloudAccessFunction-UAMI: using User-Assigned managed identity (UAMI) - Do both following steps
-        1. Assign UAMI to Azure Function, note the UAMI client Id
-        2. In the azure function code, use var myCredential = new ManagedIdentityCredential("UAMI_CLIENT_ID");
-    2. CrossCloudAccessFunction-SAMI: using System-Assigned Managed Identity (SAMI) - Do both following steps
-        1. Enable SAMI in Azure Function
-        2. In the azure function code, use var var myCredential = new DefaultAzureCredential(); OR var myCredential = new ManagedIdentityCredential();
-    3. Have both (multiple) UAMI and SAMI assigned to the Azure Function at the same time (Need to double check)
-        1. it is possilble to have multiple UAMI for one Azure Function. Depends on which crediental (UAMI) you are using in the code, you will have different permission to access different resources. 
-        Depends on what credential you create in the code.
-        2. Note: Using DefaultAzureCredential class implies using the order
-            1. [EnvironmentCredential](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.environmentcredential?view=azure-dotnet)
-            2. [ManagedIdentityCredential](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.managedidentitycredential?view=azure-dotnet)
-            3. [SharedTokenCacheCredential](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.sharedtokencachecredential?view=azure-dotnet)
-            4. [VisualStudioCredential](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.visualstudiocredential?view=azure-dotnet)
-            5. [VisualStudioCodeCredential](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.visualstudiocodecredential?view=azure-dotnet)
-            6. [AzureCliCredential](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.azureclicredential?view=azure-dotnet)
-            7. [AzurePowerShellCredential](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.azurepowershellcredential?view=azure-dotnet)
-            8. [InteractiveBrowserCredential](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.interactivebrowsercredential?view=azure-dotnet)
-4. Create storage account *crosscloudazurestorage* blob storage and some test file
-5. In storage account IAM, grant UAMI and/or SAMI “Storage Blob Data Contributor/Owner” Role (Note, the simple “Owner” role of storage account top level is NOT enough for read/write blobs in container), see doc (https://learn.microsoft.com/en-us/azure/storage/common/storage-auth-aad-app?tabs=dotnet)
-6. list blob storage with Azure function
-    1. add dependencies to the function: Blob, Identity
-7. create an S3 bucket in AWS
-8. create OIDC connection to allow Azure function to access S3
-9. list S3 objects with Azure Function
-
-## Ref
-https://docs.aws.amazon.com/sdkfornet/v3/apidocs/items/SecurityToken/MSecurityTokenServiceAssumeRoleWithWebIdentityAssumeRoleWithWebIdentityRequest.html
-https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/how-to-use-vm-token#get-a-token-using-the-azure-identity-client-library
-https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-idp_oidc.html
-https://docs.aws.amazon.com/code-samples/latest/catalog/dotnetv3-STS-AssumeRole-AssumeRoleExample-AssumeRole.cs.html
-https://github.com/aws/aws-sdk-net/issues/1699
-https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_request.html
-
-## Todo
-Next step: How to allow above 3 identities to assume IAM role? https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_saml.html https://blog.identitydigest.com/azuread-access-aws/ https://aws.amazon.com/blogs/apn/securing-aws-accounts-with-azure-active-directory-federation/ (For end user access aws console) https://devblogs.microsoft.com/azure-sdk/secretless-azure-functions-dev-with-the-new-azure-identity-libraries/
+## Ref.
+- [AWS Doc: Create a role for OpenID Connect federation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-idp_oidc.html)
+- [AWS Doc: Request temporary security credentials](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_request.html)
+- [AWS Doc: SAML 2.0 federation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_saml.html)
+- [AWS Doc: AmazonSecurityTokenServiceClient.AssumeRoleWithWebIdentity](https://docs.aws.amazon.com/sdkfornet/v3/apidocs/items/SecurityToken/MSecurityTokenServiceAssumeRoleWithWebIdentityAssumeRoleWithWebIdentityRequest.html)
+- [AWS Doc: Code examples for AWS SDK for .NET](https://docs.aws.amazon.com/code-library/latest/ug/csharp_3_code_examples.html)
+- [Azure Doc: Get a token using the Azure identity client library](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/how-to-use-vm-token#get-a-token-using-the-azure-identity-client-library)
+- [Azure Blog: Secretless Azure Functions dev with the new Azure Identity Libraries ](https://devblogs.microsoft.com/azure-sdk/secretless-azure-functions-dev-with-the-new-azure-identity-libraries/)

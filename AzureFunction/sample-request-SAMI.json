@@ -2,6 +2,6 @@
     "AzureBlobUri": "https://crosscloudazurestorage.blob.core.windows.net/mycontainer", 
     "S3BucketName": "mycrosscloudaccessdemos3",
     "ManagedIdentityType": "SAMI",
-    "UAMIClientId": "bd9d6108-c4e5-4875-9adb-f079824d5a6c",
-    "AWSRoleArn": "arn:aws:iam::200046397282:role/Azure-UAMI1-S3-Readonly-Role-for-SAMI"
+    "AWSRoleArn": "arn:aws:iam::[YOUR_AWS_ACCOUNT_NUMBER]:role/S3AccessRoleFromAzure",
+    "AzureAppId": "api://AWS-Federation-App"
 }

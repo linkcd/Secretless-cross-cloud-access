@@ -36,6 +36,7 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     string azureBlobUri = data?.AzureBlobUri;
     string s3BucketName = data?.S3BucketName;
     string AWSRoleArn = data?.AWSRoleArn;
+    string AzureAppId = data.AzureAppId;
 
     // Decide to use which credential, SAMI or UAMI
     DefaultAzureCredential azureCredential = null;
@@ -51,11 +52,8 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
             throw new Exception("Bad request: Invalid ManagedIdentityType");
     }
 
-
     // Load blob items from Azure Storage account 
-    log.LogInformation("Listing items from Azure...");
-
-    //var azureCredential = new ManagedIdentityCredential();
+    log.LogInformation("Listing items from Azure storage account...");
     var blobContainerClient = new BlobContainerClient(new Uri(azureBlobUri), azureCredential); 
 
     string responseMessage = "";
@@ -83,31 +81,12 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
         throw;
     }
 
-    // Load blob items from AWS S3
-
-    // load oauth token (Jwt)
-    string appIdForAssumingAWSRole = null;
-    if(managedIdentityType == "SAMI")
-    {
-        //for SAMI, get the current client id first
-        var accessTokenForGraph = azureCredential.GetToken(new TokenRequestContext(new[] { "https://graph.microsoft.com/.default" }));
-
-        var handler = new JwtSecurityTokenHandler();
-        JwtSecurityToken jsonToken = handler.ReadJwtToken(accessTokenForGraph.Token);
-        appIdForAssumingAWSRole = jsonToken.Claims.First(c => c.Type == "appid").Value;
-        
-    }
-    else
-    {
-        appIdForAssumingAWSRole = UAMIClientId;
-    }
-    log.LogInformation("appIdForAssumingAWSRole: " + appIdForAssumingAWSRole);
-
-
-    log.LogInformation("Assuming AWS role...");
-    var accessToken = azureCredential.GetToken(new TokenRequestContext(new[] { appIdForAssumingAWSRole }));
+    log.LogInformation("Getting JTW from Azure...");
+    var accessToken = azureCredential.GetToken(new TokenRequestContext(new[] { AzureAppId  }));
     String OAuthToken = accessToken.Token.ToString();
-    // log.LogInformation(OAuthToken);
+    log.LogInformation("OAuthToken: {0}", OAuthToken);
+
+    log.LogInformation("Assuming AWS role using JWT...");
 
     // assume aws role via AssumeRoleWithWebIdentity http request
     var builder = new UriBuilder("https://sts.amazonaws.com/");
@@ -119,7 +98,6 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     query["WebIdentityToken"] = OAuthToken;
     builder.Query = query.ToString();
     string assumeRoleRequestUrl = builder.ToString();
-    //log.LogInformation(assumeRoleRequestUrl);
 
     HttpClient hc = new HttpClient();
     using HttpResponseMessage response = await hc.GetAsync(assumeRoleRequestUrl);
@@ -141,7 +119,7 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     var sessionCredentials = new SessionAWSCredentials(accessKeyId,secretAccessKey,sessionToken);
 
     // Create a client by providing temporary security credentials.
-    log.LogInformation("Listing items from Amazon S3...");
+    log.LogInformation("AWS role assumed successfully, listing items from Amazon S3...");
     using (IAmazonS3 s3Client = new AmazonS3Client(sessionCredentials, RegionEndpoint.EUWest1))
     {
         var listObjectRequest = new ListObjectsRequest
@@ -156,11 +134,8 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
         }
 
     }
-
  
     return new OkObjectResult(responseMessage);
-
- 
 }
 
 
